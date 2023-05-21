@@ -15,7 +15,7 @@ public class PerguntasSO : ScriptableObject
     [SerializeField] private int respostaCorreta;
     [SerializeField] private string id;
 
-    public string GetEnuciado()
+    public string GetEnunciado()
     {
         return enunciado;
     }

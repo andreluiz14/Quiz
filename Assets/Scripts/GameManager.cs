@@ -7,49 +7,63 @@ using Button = UnityEngine.UI.Button;
 
 public class GameManager : MonoBehaviour
 {
-    // Acessar a camada de visão (PerguntaSO)
-    
-    [Tooltip("Arbitary text message")]
+    [Tooltip("Arbitrary text message")]
     [Header("Perguntas")]
-    [SerializeField] private PerguntasSO perguntaAtual;
-
-    // Acessar a camada de visão
+    [SerializeField] private List<PerguntasSO> listaPerguntas = new List<PerguntasSO>();
     [SerializeField] private TextMeshProUGUI textoEnunciado;
     [SerializeField] private GameObject[] alternativasTMP;
     [SerializeField] private Sprite spriteRespostaCorreta;
     [SerializeField] private Sprite spriteRespostaErrada;
-    private Button _btn;
-    //[SerializeField] private Image spriteRespostaCorreta;
-    //[SerializeField] private Image spriteRespostaErrada;
-    //[SerializeField] private Image[] spritesBotoes;
+    private Button[] botoesAlternativas;
 
-    public void Start()
+    private int indicePerguntaAtual = 0;
+
+    private void Start()
     {
-        
-        //Polular o texto do enunciado
-        textoEnunciado.SetText(perguntaAtual.GetEnuciado());
+        botoesAlternativas = new Button[alternativasTMP.Length];
 
-        string[] _alternativas = perguntaAtual.GetAlternativas();
-        //Popular os textos para as 4 alternativas
-        for(int i = 0; i < alternativasTMP.Length; i++) 
+        for (int i = 0; i < alternativasTMP.Length; i++)
+        {
+            int indice = i; // Necessário para evitar o closure problem
+            botoesAlternativas[i] = alternativasTMP[i].GetComponent<Button>();
+            botoesAlternativas[i].onClick.AddListener(() => HandleOption(indice));
+        }
+
+        ApresentarNovaPergunta();
+    }
+
+    private void ApresentarNovaPergunta()
+    {
+        if (indicePerguntaAtual >= listaPerguntas.Count)
+        {
+            Debug.Log("Você respondeu todas as perguntas!");
+            // Aqui você pode exibir uma mensagem de conclusão do jogo ou realizar outra ação desejada.
+            return;
+        }
+
+        PerguntasSO perguntaAtual = listaPerguntas[indicePerguntaAtual];
+
+        textoEnunciado.SetText(perguntaAtual.GetEnunciado());
+
+        string[] alternativas = perguntaAtual.GetAlternativas();
+
+        for (int i = 0; i < alternativasTMP.Length; i++)
         {
             TextMeshProUGUI textoAlternativa = alternativasTMP[i].GetComponentInChildren<TextMeshProUGUI>();
-            textoAlternativa.SetText(_alternativas[i]);
+            textoAlternativa.SetText(alternativas[i]);
         }
-        
-        /*
-        for(int i = 0; i < textosAlternativas.Length; i++) 
-        {
-            textosAlternativas[i].SetText(perguntaAtual.GetAlternativas()[i]);
-        }*/
+
+        ResetarBotoes();
+        indicePerguntaAtual++;
     }
-    public void HandleOption (int alternativaSelecionada)
+
+    private void HandleOption(int alternativaSelecionada)
     {
-        if(alternativaSelecionada == perguntaAtual.GetRespostaCorreta())
+        PerguntasSO perguntaAtual = listaPerguntas[indicePerguntaAtual - 1];
+
+        if (alternativaSelecionada == perguntaAtual.GetRespostaCorreta())
         {
             Debug.Log("Acertou Camarada!: " + alternativaSelecionada);
-            //Pega o component Image do gameObject e para como argumento para o parametro img
-            //Passa como argumento a sprite de resposta correta
             AlterarSprites(alternativasTMP[alternativaSelecionada].GetComponent<Image>(), spriteRespostaCorreta);
             BloquearBotoes();
         }
@@ -60,18 +74,36 @@ public class GameManager : MonoBehaviour
             AlterarSprites(alternativasTMP[perguntaAtual.GetRespostaCorreta()].GetComponent<Image>(), spriteRespostaCorreta);
             BloquearBotoes();
         }
-                
+
+        StartCoroutine(ApresentarProximaPergunta());
     }
-    public void BloquearBotoes()
+
+    private void BloquearBotoes()
     {
-        for(int i = 0; i < alternativasTMP.Length; i++)
+        for (int i = 0; i < botoesAlternativas.Length; i++)
         {
-            _btn = alternativasTMP[i].GetComponent<Button>();
-            _btn.enabled = false;
+            botoesAlternativas[i].interactable = false;
         }
     }
-    public void AlterarSprites(Image img, Sprite sprite)
+
+    private void ResetarBotoes()
+    {
+        for (int i = 0; i < botoesAlternativas.Length; i++)
+        {
+            botoesAlternativas[i].interactable = true;
+            AlterarSprites(alternativasTMP[i].GetComponent<Image>(), null);
+        }
+    }
+
+    private void AlterarSprites(Image img, Sprite sprite)
     {
         img.sprite = sprite;
+    }
+
+    private IEnumerator ApresentarProximaPergunta()
+    {
+        yield return new WaitForSeconds(1.5f); // Aguardar um breve intervalo antes de apresentar a próxima pergunta
+
+        ApresentarNovaPergunta();
     }
 }
