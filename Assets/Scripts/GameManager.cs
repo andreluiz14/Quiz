@@ -73,7 +73,7 @@ public class GameManager : MonoBehaviour
             // a alternativa correta para a questão avaliada
             MudarSpriteBotao(imgRespostaSelecionada, spriteRespostaCorreta);
             MostrarRespostaCorreta();
-            _qtdCorreta++;
+            _qtdCorreta += 5;
         }
         else
         {
@@ -156,6 +156,7 @@ public class GameManager : MonoBehaviour
         {
             // Todas as perguntas foram respondidas
             FimJogo();
+            PararTimer();
             Debug.Log("Fim do jogo");
         }
     }
@@ -201,6 +202,10 @@ public class GameManager : MonoBehaviour
         DesabilitarBotoes();
         RestaurarSpritePadrao();
         ProximaPergunta();
+    }
+    public void Desistir()
+    {
+       Application.Quit();
     }
     private void DesabilitarBotoes()
     {
