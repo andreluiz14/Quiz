@@ -10,7 +10,7 @@ public class PerguntasSO : ScriptableObject
     [SerializeField] private string enunciado;
     [SerializeField] private string[] alternativas;
     [SerializeField] private int respostaCorreta;
-    [SerializeField] private string id;
+    [SerializeField] private int id;
 
     public string GetEnunciado()
     {
@@ -24,7 +24,7 @@ public class PerguntasSO : ScriptableObject
     {
         return respostaCorreta;
     }
-    public string GetId()
+    public int GetId()
     {
         return id;
     }
