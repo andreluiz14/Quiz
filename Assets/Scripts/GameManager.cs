@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using Image = UnityEngine.UI.Image;
@@ -7,103 +6,193 @@ using Button = UnityEngine.UI.Button;
 
 public class GameManager : MonoBehaviour
 {
-    [Tooltip("Arbitrary text message")]
     [Header("Perguntas")]
-    [SerializeField] private List<PerguntasSO> listaPerguntas = new List<PerguntasSO>();
+    // Acessar a camada de Modelo (PerguntaSO)
+    [SerializeField] private PerguntasSO[] perguntas;
+    [SerializeField] private PerguntasSO perguntaAtual;
+
+    // Acessar a camada de Visão 
+    [SerializeField] private TextMeshProUGUI[] textosAlternativa;
     [SerializeField] private TextMeshProUGUI textoEnunciado;
     [SerializeField] private GameObject[] alternativasTMP;
+
+    [SerializeField] private GameObject uiRespostaCorreta;
+    [SerializeField] private GameObject uiRespostaErrada;
+    [SerializeField] private TextMeshProUGUI respostaCorreta; 
+    [SerializeField] private TextMeshProUGUI respostaErrada;
+    private string _textoResposta;
+
+    [Header("Sprites")]
+    [SerializeField] private Sprite spritePadrao;
     [SerializeField] private Sprite spriteRespostaCorreta;
-    [SerializeField] private Sprite spriteRespostaErrada;
-    private Button[] botoesAlternativas;
+    [SerializeField] private Sprite spriteRespostaIncorreta;
 
-    private int indicePerguntaAtual = 0;
+    private int numeroPergunta;
+    private int _qtdCorreta;
 
-    private void Start()
+    private Temporizador temporizador;
+    public void Start()
     {
-        botoesAlternativas = new Button[alternativasTMP.Length];
+        numeroPergunta = 0;
+        // Registrando para receber a chamada de volta usando o método RegistrarTempoMaximoAtingido()
+        temporizador = GetComponent<Temporizador>();
+        temporizador.RegistrarParada(OnParadaTimer);
 
-        for (int i = 0; i < alternativasTMP.Length; i++)
-        {
-            int indice = i; // Necessário para evitar o closure problem
-            botoesAlternativas[i] = alternativasTMP[i].GetComponent<Button>();
-            botoesAlternativas[i].onClick.AddListener(() => HandleOption(indice));
-        }
-
-        ApresentarNovaPergunta();
-    }
-
-    private void ApresentarNovaPergunta()
-    {
-        if (indicePerguntaAtual >= listaPerguntas.Count)
-        {
-            Debug.Log("Você respondeu todas as perguntas!");
-            // Aqui você pode exibir uma mensagem de conclusão do jogo ou realizar outra ação desejada.
-            return;
-        }
-
-        PerguntasSO perguntaAtual = listaPerguntas[indicePerguntaAtual];
-
+        // Popular o texto do enunciado
         textoEnunciado.SetText(perguntaAtual.GetEnunciado());
 
+        // Popular os textos para as 4 alternativas
         string[] alternativas = perguntaAtual.GetAlternativas();
 
         for (int i = 0; i < alternativasTMP.Length; i++)
         {
-            TextMeshProUGUI textoAlternativa = alternativasTMP[i].GetComponentInChildren<TextMeshProUGUI>();
-            textoAlternativa.SetText(alternativas[i]);
+            // Capturar cada caixa de texto que encontra-se "dentro" dos botões
+            // Cada botão está sendo tratado como um GameObject 
+            TextMeshProUGUI ta = alternativasTMP[i].GetComponentInChildren<TextMeshProUGUI>();
+            // Alterar o texto de cada "caixa de texto" que encontra-se dentro dos botões
+            ta.SetText(alternativas[i]);
         }
-
-        ResetarBotoes();
-        indicePerguntaAtual++;
     }
 
-    private void HandleOption(int alternativaSelecionada)
+    public void HandleOption(int alternativaSelecionada)
     {
-        PerguntasSO perguntaAtual = listaPerguntas[indicePerguntaAtual - 1];
+        // Desabilitar os botões de resposta para que novas respostas não sejam registradas
+        //DesabilitarBotoesResposta();
+        PararTimer();
+        Image imgRespostaSelecionada = alternativasTMP[alternativaSelecionada].GetComponent<Image>();
 
         if (alternativaSelecionada == perguntaAtual.GetRespostaCorreta())
         {
-            Debug.Log("Acertou Camarada!: " + alternativaSelecionada);
-            AlterarSprites(alternativasTMP[alternativaSelecionada].GetComponent<Image>(), spriteRespostaCorreta);
-            BloquearBotoes();
+            // a alternativa selecionada está correta
+
+            // alterar o sprite do botão selecionado pelo jogador, assumindo que esse botão representa
+            // a alternativa correta para a questão avaliada
+            MudarSpriteBotao(imgRespostaSelecionada, spriteRespostaCorreta);
+            MostrarRespostaCorreta();
+            print("Teste1");
+            _qtdCorreta++;
         }
         else
         {
-            Debug.Log("Errou: " + alternativaSelecionada);
-            AlterarSprites(alternativasTMP[alternativaSelecionada].GetComponent<Image>(), spriteRespostaErrada);
-            AlterarSprites(alternativasTMP[perguntaAtual.GetRespostaCorreta()].GetComponent<Image>(), spriteRespostaCorreta);
-            BloquearBotoes();
+            print("Teste2");
+            // a alternativa selecionada está incorreta
+            Image imgRespostaCorreta = alternativasTMP[perguntaAtual.GetRespostaCorreta()].GetComponent<Image>();
+            MostrarRespostaErrada();
+            MudarSpriteBotao(imgRespostaSelecionada, spriteRespostaIncorreta);
+            MudarSpriteBotao(imgRespostaCorreta, spriteRespostaCorreta);
         }
-
-        StartCoroutine(ApresentarProximaPergunta());
+        DesabilitarBotoesResposta();
+        
     }
 
-    private void BloquearBotoes()
-    {
-        for (int i = 0; i < botoesAlternativas.Length; i++)
-        {
-            botoesAlternativas[i].interactable = false;
-        }
-    }
-
-    private void ResetarBotoes()
-    {
-        for (int i = 0; i < botoesAlternativas.Length; i++)
-        {
-            botoesAlternativas[i].interactable = true;
-            AlterarSprites(alternativasTMP[i].GetComponent<Image>(), null);
-        }
-    }
-
-    private void AlterarSprites(Image img, Sprite sprite)
+    // Função utilizada para alterar os sprites de um botão de alternativa
+    public void MudarSpriteBotao(Image img, Sprite sprite)
     {
         img.sprite = sprite;
     }
 
-    private IEnumerator ApresentarProximaPergunta()
+    // Função utilizada para desabilitar os botões de alternativas;
+    public void DesabilitarBotoesResposta()
     {
-        yield return new WaitForSeconds(1.5f); // Aguardar um breve intervalo antes de apresentar a próxima pergunta
+        for (int i = 0; i < alternativasTMP.Length; i++)
+        {
+            Button btn = alternativasTMP[i].GetComponent<Button>();
+            btn.enabled = false;
+        }
+    }
 
-        ApresentarNovaPergunta();
+    void PararTimer()
+    {
+        temporizador.Parar();
+    }
+
+    // Função utilizada para chamar a próxima questão do Quiz apos o timer ser interrompido
+    void OnParadaTimer()
+    {
+      
+        Debug.Log("parada");
+        bool respostaSelecionada = false;
+        for (int i = 0; i < alternativasTMP.Length; i++)
+        {
+            Button btn = alternativasTMP[i].GetComponent<Button>();
+            if (!btn.enabled)
+            {
+                respostaSelecionada = true;
+                break;
+            }
+        }
+
+        if (!respostaSelecionada)
+        {
+            MostrarRespostaErrada();
+            DesabilitarBotoesResposta();
+        }
+
+        numeroPergunta++;
+        StartCoroutine(EsperarProximaPergunta());
+    }
+    private void ProximaPergunta()
+    {
+        if (numeroPergunta < perguntas.Length)
+        {
+            perguntaAtual = perguntas[numeroPergunta];
+            textoEnunciado.SetText(perguntaAtual.GetEnunciado());
+
+            string[] alternativas = perguntaAtual.GetAlternativas();
+            for (int i = 0; i < alternativas.Length; i++)
+            {
+                TextMeshProUGUI ta = alternativasTMP[i].GetComponentInChildren<TextMeshProUGUI>();
+                ta.SetText(alternativas[i]);
+
+                Button btn = alternativasTMP[i].GetComponent<Button>();
+                btn.enabled = true;
+            }
+
+            RestaurarSpritePadrao();
+        }
+        else
+        {
+            // Todas as perguntas foram respondidas
+            Debug.Log("Fim do jogo");
+        }
+        numeroPergunta++;
+    }
+    private void HabilitarBotoesAlternativa()
+    {
+        for (int i = 0; i < textosAlternativa.Length; i++)
+        {
+            textosAlternativa[i].GetComponentInParent<Button>().interactable = true;
+            Image im = alternativasTMP[i].GetComponentInChildren <Image>();
+            im.sprite = spritePadrao;
+        }
+    }
+    private void RestaurarSpritePadrao()
+    {
+        for (int i = 0; i < alternativasTMP.Length; i++)
+        {
+            Image im = alternativasTMP[i].GetComponentInChildren<Image>();
+            im.sprite = spritePadrao;
+        }
+    }
+    private IEnumerator EsperarProximaPergunta()
+    {
+        yield return new WaitForSeconds(4f);
+        temporizador.Zerar();
+        uiRespostaCorreta.gameObject.SetActive(false);
+        uiRespostaErrada.gameObject.SetActive(false);
+        RestaurarSpritePadrao();
+        ProximaPergunta();
+    }
+    private void MostrarRespostaCorreta()
+    {
+        uiRespostaCorreta.gameObject.SetActive(true);
+        _textoResposta= perguntaAtual.GetAlternativas()[perguntaAtual.GetRespostaCorreta()];
+        respostaCorreta.SetText("Parabéns Camarada!\n Correto é  \n\n" + _textoResposta);
+    }
+    private void MostrarRespostaErrada()
+    {
+        uiRespostaErrada.gameObject.SetActive(true);
+        _textoResposta = perguntaAtual.GetAlternativas()[perguntaAtual.GetRespostaCorreta()];
+        respostaErrada.SetText("Poxa Camarada!\n Resposta correta é \n\n" + _textoResposta);
     }
 }
