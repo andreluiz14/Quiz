@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4818e8c742bb6a549985ee48ee50a0b0, type: 3}
+  m_Name: pergunta_08
+  m_EditorClassIdentifier: 
+  enunciado: "O que \xE9 a \"Hierarchy\" no Unity?"
+  alternativas:
+  - a) Uma lista de objetos na cena
+  - b) Um tipo de script
+  - "c) Uma interface gr\xE1fica do usu\xE1rio"
+  - "d) Um sistema de f\xEDsica "
+  respostaCorreta: 0
+  id: 8
