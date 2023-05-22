@@ -115,9 +115,10 @@ public class GameManager : MonoBehaviour
         for (int i = 0; i < alternativasTMP.Length; i++)
         {
             Button btn = alternativasTMP[i].GetComponent<Button>();
-            if (!btn.enabled)
+            if (btn.enabled)
             {
                 respostaSelecionada = true;
+                print(respostaSelecionada);
                 break;
             }
         }
@@ -127,6 +128,7 @@ public class GameManager : MonoBehaviour
             MostrarRespostaErrada();
             DesabilitarBotoesResposta();
         }
+        
 
         numeroPergunta++;
         StartCoroutine(EsperarProximaPergunta());
@@ -153,6 +155,7 @@ public class GameManager : MonoBehaviour
         else
         {
             // Todas as perguntas foram respondidas
+            FimJogo();
             Debug.Log("Fim do jogo");
         }
         numeroPergunta++;
@@ -194,5 +197,10 @@ public class GameManager : MonoBehaviour
         uiRespostaErrada.gameObject.SetActive(true);
         _textoResposta = perguntaAtual.GetAlternativas()[perguntaAtual.GetRespostaCorreta()];
         respostaErrada.SetText("Poxa Camarada!\n Resposta correta é \n\n" + _textoResposta);
+    }
+    private void FimJogo()
+    {
+        uiRespostaCorreta.gameObject.SetActive(true);
+        respostaCorreta.SetText("Sua pontuação é : " + _qtdCorreta);
     }
 }
